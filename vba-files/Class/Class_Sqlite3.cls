@@ -199,7 +199,7 @@ Public Function stringToUtf8bytes(ByVal txt As String) As Byte() ' {
 
 End Function
 
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Private Function sqlite3_bind_text(ByVal stmt As LongPtr, ByVal pos As Long, ByVal val As String, ByVal len_ As Integer, ByVal whatIsThis As LongPtr) As Long
 #Else
     Private Function sqlite3_bind_text(ByVal stmt As Long, ByVal pos As Long, ByVal val As String, ByVal len_ As Integer, ByVal whatIsThis As Long) As Long
@@ -210,14 +210,14 @@ End Function
   sqlite3_bind_text = sqlite3_bind_text_(stmt, pos, VarPtr(arrayVariant), len_, whatIsThis)
 
 End Function
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Private Function sqlite3_column_name(ByVal stmt As LongPtr, ByVal iCol As Long, Optional ByVal encode As Long = CP_UTF8) As String
 #Else
     Private Function sqlite3_column_name(ByVal stmt As Long, ByVal iCol As Long, Optional ByVal encode As Long = CP_UTF8) As String
 #End If
     sqlite3_column_name = ptrToString(sqlite3_column_name_(stmt, iCol), encode)
 End Function
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Private Function sqlite3_column_text(ByVal stmt As LongPtr, ByVal iCol As Long, Optional ByVal encode As Long = CP_UTF8) As String
 #Else
     Private Function sqlite3_column_text(ByVal stmt As Long, ByVal iCol As Long, Optional ByVal encode As Long = CP_UTF8) As String
@@ -225,7 +225,7 @@ End Function
     sqlite3_column_text = ptrToString(sqlite3_column_text_(stmt, iCol), encode)
 End Function
 
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Public Function recordCount(ByVal db As LongPtr, ByVal sql As String) As Long
     Dim stmt As LongPtr
 #Else
@@ -247,7 +247,7 @@ End Function
     recordCount = count
 End Function
 
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Public Function columnCount(ByVal db As LongPtr, ByVal sql As String) As Long
     Dim stmt As LongPtr
 #Else
@@ -265,7 +265,7 @@ End Function
     columnCount = count
 End Function
 
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Public Function openDB(FileName As String) As LongPtr
     Dim res As LongPtr
 #Else
@@ -282,7 +282,7 @@ End Function
 
 End Function
 
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Public Function closeDB(db As LongPtr)
     Dim res As LongPtr
 #Else
@@ -324,7 +324,7 @@ Private Function checkStepRetval(retVal As Long)
     Err.Raise 1000, "checkStepRetval", "step failed, retVal = " & retVal
 
 End Function
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Public Function execSQL(db As LongPtr, sql As String)
     Dim res    As LongPtr
 #Else
@@ -340,7 +340,7 @@ End Function
 
 End Function
 
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Private Function prepareStmt(db As LongPtr, sql As String) As LongPtr
     Dim res    As LongPtr
 #Else
@@ -365,7 +365,7 @@ Function createTbl(ByVal tblName As String, ByVal colStr As String, Optional isE
     createTbl = "CREATE TABLE " & isExistStr & " " & tblName & "(" & colStr & ");"
 End Function
 
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Function queryToArray(ByVal db As LongPtr, ByVal sql As String, Optional ByVal encode As Long = 936, Optional ByVal isTitle As Boolean = False)
     Dim stmt As LongPtr
 #Else
