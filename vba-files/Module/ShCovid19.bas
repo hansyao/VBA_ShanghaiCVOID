@@ -1,4 +1,13 @@
 Attribute VB_Name = "ShCovid19"
+
+'''+----                                                                   --+
+'''|                             上海新冠疫情查询                             |
+'''|                tech stack: sqlite3, excel XY chart                      |
+'''|                @author Hans Yao <hansyow@gmail.com>                     |
+'''|                  Copyright (c) 2019-2022 Hans Yao                       |
+'''|          The Project Page: https://blog.oneplus-solution.com            |
+'''+--                                                                   ----+
+
 Option Explicit
 
 Public Const RESPONSE_CHARSETS As String = "utf-8"
@@ -62,9 +71,9 @@ Public Function codeSet() As Long
     Dim wmi As Object
     Dim OS As Object
     Dim cs As Long
-    
+
     Set wmi = GetObject("winmgmts:")
-    
+
     For Each OS In wmi.ExecQuery("SELECT * FROM Win32_OperatingSystem")
       cs = VBA.CLng(OS.codeSet)
     Next
@@ -118,11 +127,11 @@ End Property
 
 Private Property Get webreq() As Object
     Dim xxWebReq As New Class_HttpRequest
-    
+
     xxWebReq.SetReqHeaderUserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Edg/98.0.1108.56"
     xxWebReq.SetReqHeaderAccept "application/json, text/javascript, text/html"
     xxWebReq.SetReqHeaderAcceptLanguage "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"
-    
+
     Set webreq = xxWebReq
     Set xxWebReq = Nothing
 End Property
@@ -147,7 +156,7 @@ End Function
 
 Private Function isInArray(ByVal myStr As String, ByVal myArray) As Boolean
     Dim str As Variant
-    
+
     For Each str In myArray
         If str = myStr Then
             isInArray = True
@@ -188,7 +197,7 @@ End Function
 Private Function isExclude(ByVal myStr As String, ByVal exclude As String) As Boolean
     Dim myArray As Variant
     Dim i As Long
-    
+
     myArray = Split(exclude, ",")
     For i = 0 To UBound(Split(exclude, ","))
         If VBA.InStr(1, myStr, myArray(i)) > 0 Then
@@ -202,7 +211,7 @@ End Function
 '@MatchesExp(ByRef strng): 正则 - 判断是否包含数字
 Private Function isInclNum(ByRef strng) As Boolean
     Dim regEx As Object
-    
+
     Set regEx = CreateObject("vbscript.regexp")
     With regEx
         .Global = True
@@ -245,7 +254,7 @@ Public Function mapDataToDb(ByVal db As Long, ByVal tbl As String)
     Dim mapData() As Variant
 
     Set req = webreq
-    
+
     adc = VBA.Split(adCode, ",")
     adcd = VBA.Split(adCodeDescription, ",")
     For i = 0 To UBound(adc)
@@ -264,7 +273,7 @@ Public Function mapDataToDb(ByVal db As Long, ByVal tbl As String)
         mapData(1, UBound(mapData, 2)) = Resp.body
 continue:
     Next
-    
+
     '将查询结果写入sqlite数据库
     sqlite3.execSQL db, "BEGIN TRANSACTION"
     For i = 0 To UBound(mapData, 2)
@@ -306,9 +315,9 @@ Private Function mapDataToJson() As Object
     Dim centerList As String
     Dim longitudeCenter As String
     Dim latitudeCenter As String
-    
+
     If db = 0 Then Call initDb
-    
+
     Set myJson1 = JSON.ParseJson("{}")
     myArray = VBA.Split(adCodeDescription, ",")
     For i = 0 To UBound(myArray)
@@ -322,7 +331,7 @@ Private Function mapDataToJson() As Object
         Erase areaArray
 continue:
     Next i
-    
+
     '获取区域边界坐标转换为excel数组myJSON2
     Set myJson2 = JSON.ParseJson("{}")
     coordinate = VBA.Split(adCodeDescription, ",")
@@ -377,18 +386,18 @@ Private Function getEntrance(ByVal mainUri As String) As Variant
     Dim max As Variant
 
     Set req = webreq
-    
+
     req.url = mainUri & "index.html"
-        
+
     Set Resp = http.GetReq(req)
     Set htmlDoc = VBA.CreateObject("htmlfile")
-    
+
     'Debug.Print Resp.body
-    
+
     '获取页码
     patrn = """setPage"",[0-9],[0-9]*"
     totalPage = Split(MatchesExp(Resp.body, patrn)(0), ",")(2)
-    
+
     For i = 1 To totalPage
         If i <> 1 Then
             req.url = mainUri & "index_" & i & ".html"
@@ -398,12 +407,12 @@ Private Function getEntrance(ByVal mainUri As String) As Variant
 
         If Len(cookie) > 0 Then req.SetReqHeaderCookie cookie
         Set Resp = http.GetReq(req)
-        
+
         If Resp.StatusCd <> "200" Then GoTo continue
 
         htmlDoc.body.innerhtml = Resp.body
         htmlDoc.body.innerhtml = htmlDoc.getElementsByTagName("ul")(0).innerhtml
-        
+
         For Each urlList In htmlDoc.getElementsByTagName("li")
             If VBA.InStr(1, urlList.innerText, "居住地信息") > 0 Then
                 mDate = VBA.Format(urlList.getElementsByTagName("SPAN")(0).innerText, "yyyy-mm-dd")
@@ -450,10 +459,10 @@ Private Function getDetail(ByVal url As String, ByVal releaseDate As String) As 
 
     Set req = webreq
     req.url = url
-    
+
     Set Resp = http.GetReq(req)
     If Resp.StatusCd <> "200" Then Exit Function
-    
+
     Set htmlDoc = VBA.CreateObject("htmlfile")
 
     cookie = Resp.GetHeader("set-cookie")
@@ -461,7 +470,7 @@ Private Function getDetail(ByVal url As String, ByVal releaseDate As String) As 
     'Debug.Print Resp.body
 
     htmlDoc.body.innerhtml = Resp.body
-    
+
     If VBA.InStr(1, req.url, "https://mp.weixin.qq.com") > 0 Then
         sourceId = "js_content"
     ElseIf VBA.InStr(1, req.url, "https://wsjkw.sh.gov.cn") > 0 Then
@@ -471,9 +480,9 @@ Private Function getDetail(ByVal url As String, ByVal releaseDate As String) As 
         Exit Function
     End If
     tag = "p"
-    
+
     htmlDoc.body.innerhtml = htmlDoc.getElementById(sourceId).innerhtml
-    
+
     For Each location In htmlDoc.getElementsByTagName(tag)
         myLine = location.innerText
 
@@ -507,7 +516,7 @@ Private Function getDetail(ByVal url As String, ByVal releaseDate As String) As 
             byCity(4, mUbound) = myLine
         End If
 
-        
+
         'If VBA.InStr(myLine, "居住于") > 0 Then
         If RegExpTest("(?=.*(" & VBA.Replace(district, ",", "|") & "))(?=.*\d+年\d+月\d+日)", myLine, False) Then
             mDate = MatchesExp(myLine, "\d+月\d+日|\d+年\d+月\d+日")(0)
@@ -539,7 +548,7 @@ Private Function getDetail(ByVal url As String, ByVal releaseDate As String) As 
 
             If VBA.Err.Number <> 0 Then asymptomaticCase = 0
             VBA.Err.Clear
-            
+
             If SafeArrayGetDim(byDistrict) > 0 Then
                 ReDim Preserve byDistrict(5, UBound(byDistrict, 2) + 1)
             Else
@@ -555,7 +564,7 @@ Private Function getDetail(ByVal url As String, ByVal releaseDate As String) As 
         End If
 
         If currentDistrict = "" Or isExclude(myLine, exclude) Or myLine = "" Then GoTo continue
-        
+
         '居住地汇总
         mLocation = VBA.Replace(VBA.Replace(location.innerText, "，", ""), "。", "")
         mLocation = VBA.Replace(mLocation, "、", "")
@@ -568,15 +577,15 @@ Private Function getDetail(ByVal url As String, ByVal releaseDate As String) As 
         Else
             ReDim byLocation(3, 0)
         End If
-        
+
         mUbound = UBound(byLocation, 2)
         byLocation(0, mUbound) = releaseDate
         byLocation(1, mUbound) = mDate
         byLocation(2, mUbound) = currentDistrict
         byLocation(3, mUbound) = mLocation
-        
+
         'Debug.Print releaseDate, mDate, currentdistrict, mLocation
-        
+
         If isHistoryExists Then Exit For
 
 continue:
@@ -652,9 +661,9 @@ Private Function amapPoi(ByVal location As String) As Object
     Dim url As String
     Dim myArray As Variant
     Dim count As Integer
-    
+
     Call initDb
-    
+
     'check whether isExist in database
     count = sqlite3.recordCount(db, "select DISTINCT location from poi where location='" & location & "'")
     If count > 0 Then GoTo final
@@ -673,10 +682,10 @@ Private Function amapPoi(ByVal location As String) As Object
 
     'write result to sqlite3 database
     sqlite3.execSQL db, "insert into poi values(" & "'" & location & "','" & Resp.body & "'" & ");"
-  
+
 final:
     myArray = sqlite3.queryToArray(db, "select * from poi where location=" & "'" & location & "'", CP_GB2312, True)
-    
+
     'Debug.Print JSON.ConvertToJson(JSON.ParseJson(myArray(1, 1)), Whitespace:=2)
     Set amapPoi = JSON.ParseJson(myArray(1, 1))
 End Function
@@ -693,9 +702,9 @@ Static Function amapFullPoi(ByVal location As String) As String
     Dim township As String
     Dim businessAreas As String
     Dim i As Long
-    
+
     'check whether isExist in database
-    
+
     '获取坐标
     Set req = Nothing
     With req
@@ -709,7 +718,7 @@ Static Function amapFullPoi(ByVal location As String) As String
     If Resp.StatusCd <> "200" Then GoTo continue
     On Error GoTo continue
     If JSON.ParseJson(Resp.body)("info") <> "OK" Then GoTo continue
-    
+
     lng = JSON.ParseJson(Resp.body)("geocodes")(1)("location")("lng")
     lat = JSON.ParseJson(Resp.body)("geocodes")(1)("location")("lat")
     formattedAddress = JSON.ParseJson(Resp.body)("geocodes")(1)("formattedAddress")
@@ -727,7 +736,7 @@ Static Function amapFullPoi(ByVal location As String) As String
     If Resp.StatusCd <> "200" Then GoTo continue
     On Error GoTo continue
     If VBA.StrComp(JSON.ParseJson(Resp.body)("info"), "OK", vbTextCompare) <> 0 Then GoTo continue
-    
+
     township = JSON.ParseJson(Resp.body)("regeocode")("addressComponent")("township")
     On Error GoTo err_handler
     businessAreas = JSON.ParseJson(Resp.body)("regeocode")("addressComponent")("businessAreas")(1)("name")
@@ -736,7 +745,7 @@ err_handler:
         businessAreas = "未知"
         Err.Clear
     End If
-    
+
     With sLocationXY
         i = .Cells(.Rows.count, 1).End(xlUp).Row
         If i = 1 And VBA.LenB(.Cells(.Rows.count, 1).End(xlUp)) = 0 Then
@@ -755,7 +764,7 @@ err_handler:
             .Cells(i + 1, 6) = township
         End If
      End With
-    
+
     DoEvents
     '写入sqlite3数据库
     amapFullPoi = location & "||" & lng & "||" & lat & "||" & formattedAddress & "||" & businessAreas & "||" & township
@@ -823,7 +832,7 @@ err_handler:
         sqlite3.execSQL db, "ROLLBACK TRANSACTION"
         Err.Clear
     End If
-    
+
     Set ws = Nothing
 End Function
 
@@ -835,13 +844,13 @@ Private Function locationXY2Db()
     Dim totalCol As Long
     Dim i As Long
     Dim j As Long
-    
+
     Set ws = sLocationXY
-    
+
     With ws
         totalRow = .Cells(.Rows.count, 1).End(xlUp).Row
     End With
-    
+
     If db = 0 Then Call initDb
     sqlite3.execSQL db, "DROP TABLE IF EXISTS poi"
     Call initDb
@@ -876,7 +885,7 @@ err_handler:
         sqlite3.closeDB db: db = 0
         Err.Clear
     End If
-    
+
     Set ws = Nothing
 End Function
 Private Function initMapChart(ByVal chartName As String)
@@ -932,7 +941,7 @@ Private Function initMapChart(ByVal chartName As String)
         rngLatitude = Application.Transpose(latitude)
         rangeText2number rngLongitude
         rangeText2number rngLatitude
-        
+
         With mapChart
             .seriesValueX = "='" & sMapdata.name & "'!" & rngLongitude.Address
             .seriesValue = "='" & sMapdata.name & "'!" & rngLatitude.Address
@@ -954,7 +963,7 @@ Private Function initMapChart(ByVal chartName As String)
         .Chart.SetElement (msoElementPrimaryCategoryAxisNone)
         .Chart.SetElement (msoElementPrimaryValueAxisNone)
     End With
-    
+
     'formatting series
     For j = myChart.Chart.SeriesCollection.count To 1 Step -1
         Set srs = myChart.Chart.SeriesCollection(j)
@@ -1036,7 +1045,7 @@ continue:
         Err.Description = "没有发现更新"
         GoTo err_handler
     End If
-    
+
     '获取地图数据并写入sqlite数据库
     progressShape "获取地图数据并写入sqlite数据库..."
     count = sqlite3.recordCount(db, "select DISTINCT * from mapdata")
@@ -1046,7 +1055,7 @@ continue:
     Else
         progressShape "地图数据已存在于sqlite数据库中，跳过在线爬取..."
     End If
-    
+
     '清除数据表
     'Call clearAllSheets
 
@@ -1064,7 +1073,7 @@ continue:
     Next i
     Erase byCity
     sqlite3.execSQL db, "COMMIT"
-    
+
     sqlite3.execSQL db, "BEGIN TRANSACTION"
     For i = 0 To UBound(byDistrict, 2)
         On Error GoTo err_handler
@@ -1073,7 +1082,7 @@ continue:
     Next i
     Erase byDistrict
     sqlite3.execSQL db, "COMMIT"
-    
+
     sqlite3.execSQL db, "BEGIN TRANSACTION"
     For i = 0 To UBound(byLocation, 2)
         On Error GoTo err_handler
@@ -1082,19 +1091,19 @@ continue:
     Next i
     Erase byLocation
     sqlite3.execSQL db, "COMMIT"
-    
+
     '计算解封条件
     progressShape "计算解封条件..."
     fullPoiSummary (getMax("url_list", "release_date"))
-    
+
     '创建地图
     progressShape "创建地图..."
     Call GenerateMap
-    
+
     '显示分区坐标
     progressShape "显示分区坐标..."
     Call categoryXY
-    
+
     '将sqlite数据库导出到excel
 '    dbToExcel db, "by_city", sCity
 '    dbToExcel db, "by_district", sDistrict
@@ -1115,7 +1124,7 @@ err_handler:
 
     sqlite3.closeDB db: db = 0
     Application.ScreenUpdating = True
-    
+
     If shapeExists("statusMsg", home) Then home.Shapes("statusMsg").Delete
 
 End Function
@@ -1178,7 +1187,7 @@ End Function
 
 Private Function estimatedArea(ByVal theDate As String)
     Dim dDiff As Long
-    
+
     dDiff = DateDiff("d", theDate, Now)
     If dDiff <= 7 Then
         estimatedArea = "封控区"
@@ -1229,7 +1238,7 @@ Private Function colorizedAreaType(ByVal shapeName As String) As Boolean
     Set myShape = home.Shapes(shapeName)
     shapeText = myShape.TextFrame2.TextRange
     areaList = "封控区|管控区|防范区"
-    
+
     For Each matchIndex In RegExpTest(areaList, shapeText)
         firstIndex = VBA.CLng(VBA.Split(matchIndex, "|")(0))
         matchStr = VBA.Split(matchIndex, "|")(1)
@@ -1244,7 +1253,7 @@ Private Function colorizedAreaType(ByVal shapeName As String) As Boolean
             End Select
         End With
     Next
-    
+
     Set myShape = Nothing
 End Function
 
@@ -1306,13 +1315,13 @@ Private Function addLocationSeries(jsonString As String, ByVal myChart As ChartO
     Dim mapChart As New Class_Chart
     Dim mySeries As Series
     Dim sPoint As Point
-    
+
     Set myJson = JSON.ParseJson(jsonString)
     Set myJson2 = JSON.ParseJson("{}")
     For Each myJson1 In myJson
         Set myJson2(myJson1("估测区域")) = JSON.ParseJson("{}")
     Next myJson1
-    
+
     For Each myJson1 In myJson
         If myJson2(myJson1("估测区域"))("area") <> "" Then delimiter = ";"
         myJson2(myJson1("估测区域"))("area") = myJson2(myJson1("估测区域"))("area") & delimiter & myJson1("小区名")
@@ -1320,7 +1329,7 @@ Private Function addLocationSeries(jsonString As String, ByVal myChart As ChartO
         myJson2(myJson1("估测区域"))("latitude") = myJson2(myJson1("估测区域"))("latitude") & delimiter & VBA.Split(myJson1("坐标"), ",")(1)
         delimiter = ""
     Next myJson1
-    
+
     'add/define new chart
     'On Error GoTo err_handler
     For Each SeriesName In myJson2
@@ -1332,7 +1341,7 @@ Private Function addLocationSeries(jsonString As String, ByVal myChart As ChartO
             .updateSeries myChart, xlXYScatter
         End With
     Next
-    
+
     'formatting series
     For Each mySeries In myChart.Chart.SeriesCollection
         With mySeries
@@ -1356,7 +1365,7 @@ Private Function addLocationSeries(jsonString As String, ByVal myChart As ChartO
                         .ForeColor.RGB = RGB(0, 255, 0)
                     End With
             End Select
-            
+
         End With
     Next
 
@@ -1418,7 +1427,7 @@ Private Function inquiryByArray(ByVal myArray As Variant)
             End If
             myArray2(UBound(myArray2)) = myArray1(i, 0)
         Next i
-        
+
         'get POI info
         On Error GoTo continue1
         Set poiJSON = amapPoi(myArray1(0, 3))
@@ -1440,7 +1449,7 @@ continue1:
         Set myJson = Nothing
 continue:
     Next myLocation
-    
+
     If JSON.ConvertToJson(myJSONArray) = "[]" Then
         Err.Number = 100
         Err.Description = "未查询到有效数据， 请重新输入"
@@ -1470,13 +1479,13 @@ Private Function fullPoiSummary(ByVal mDate As String, Optional ByVal nDate As S
     Dim myArray As Variant
 
     If db = 0 Then Call initDb
-    
+
     If VBA.Len(nDate) <> 0 Then
         criteria = "where release_date='" & mDate & "'"
     Else
         criteria = "where release_date<='" & mDate & "'"
     End If
-    
+
     '模糊查询
     sql = "select DISTINCT release_date,location,district,max(end_date) as latest_date," & _
         "JULIANDAY('" & mDate & "') - JULIANDAY(max(end_date)) as dDiff," & _
@@ -1484,18 +1493,18 @@ Private Function fullPoiSummary(ByVal mDate As String, Optional ByVal nDate As S
         "date(max(end_date),'+14 day') as dUnlockdown," & _
         "iif(JULIANDAY(date(max(end_date),'+14 day')) - JULIANDAY('" & mDate & "')<0,'无',JULIANDAY(date(max(end_date),'+14 day')) - JULIANDAY('" & mDate & "')) as dDiffUnlockdown " & _
         "from by_location " & criteria & " group by location order by district asc"
-    
+
     'create temp table
     sqlite3.execSQL db, "DROP TABLE IF EXISTS summary1"
     On Error GoTo err_handler
     sqlite3.execSQL db, "CREATE TEMPORARY TABLE IF NOT EXISTS summary1 AS with FT_CTE AS (" & sql & ") SELECT * FROM FT_CTE"
-    
+
     sql = "SELECT DISTINCT summary1.*,poi.lng,poi.lat,poi.formattedAddress,poi.businessAreas,poi.township " & _
         "from summary1 LEFT OUTER JOIN poi on summary1.location = poi.location"
     sqlite3.execSQL db, "DROP TABLE IF EXISTS summary"
     On Error GoTo err_handler
     sqlite3.execSQL db, "CREATE TABLE IF NOT EXISTS summary AS with FT_CTE AS (" & sql & ") SELECT * FROM FT_CTE"
-    
+
 '    sql = "SELECT DISTINCT * from summary"
 '    On Error GoTo err_handler
 '    myArray = sqlite3.queryToArray(db, sql, CP_GB2312, True)
@@ -1504,7 +1513,7 @@ Private Function fullPoiSummary(ByVal mDate As String, Optional ByVal nDate As S
 '        .Cells.Clear
 '        .Range(.Cells(1, 1), .Cells(UBound(myArray, 1) + 1, UBound(myArray, 2) + 1)) = myArray
 '    End With
-    
+
     'sqlite3.closeDB db: db = 0
 
 err_handler:
@@ -1522,7 +1531,7 @@ Private Sub inquiryByLocation(ByVal rng As Range)
     Dim keywords As String
     Dim i As Long
     Dim v As Variant
-    
+
     'Debug.Print ActiveSheet.Buttons(Application.Caller).name
 '    Debug.Print TypeName(Application.Caller)
 '    Select Case TypeName(Application.Caller)
@@ -1540,18 +1549,18 @@ Private Sub inquiryByLocation(ByVal rng As Range)
     If Not FileExists(dbName) Then
         Call initMain
     End If
-    
+
     Call initDb
 
     keywords = rng.Value
-    
+
     'Set myShape = addMyShape("info")
     If VBA.Trim(keywords) = "" Then
         Err.Number = 100
         Err.Description = "未查询到有效数据， 请重新输入"
         GoTo err_handler
     End If
-    
+
     '模糊查询
     sql = "select DISTINCT location from summary"
     On Error GoTo err_handler
@@ -1562,7 +1571,7 @@ Private Sub inquiryByLocation(ByVal rng As Range)
         Err.Description = "未查询到有效数据"
         GoTo err_handler
     End If
-    
+
     '构建结果临时表
     sqlite3.execSQL db, "DROP TABLE IF EXISTS tempTbl"
     sqlite3.execSQL db, "CREATE TABLE IF NOT EXISTS tempTbl(location);"
@@ -1572,15 +1581,15 @@ Private Sub inquiryByLocation(ByVal rng As Range)
         End If
     Next i
     Erase myArray
-    
+
     '显示模糊查询结果，提示用户选择
     'sql = "SELECT DISTINCT summary1.*,poi.lng,poi.lat,poi.formattedAddress,poi.businessAreas,poi.township " & _
         "from summary1 INNER JOIN poi where summary1.location = poi.location"
     sql = "SELECT DISTINCT summary.* from summary INNER JOIN tempTbl on summary.location = tempTbl.location"
-    
+
     myArray = sqlite3.queryToArray(db, sql, CP_GB2312, True)
     sqlite3.execSQL db, "DROP TABLE IF EXISTS tempTbl;"
-    
+
     '将查询结果写入listView
     'Dim ws As Worksheet: Set ws = Sheet1
     'ws.Range(ws.Cells(1, 1), ws.Cells(UBound(myArray, 1) + 1, UBound(myArray, 2) + 1)) = myArray
@@ -1615,7 +1624,7 @@ Private Function zoomChart(Optional ByVal inOut As Integer = 0)
     Dim myChart As ChartObject
     Dim axesLen1 As Double
     Dim axesLen2 As Double
-    
+
     On Error GoTo err_handler
     Set myChart = home.ChartObjects("mapChart")
     With myChart.Chart.Axes(xlValue)
@@ -1632,7 +1641,7 @@ Private Function zoomChart(Optional ByVal inOut As Integer = 0)
                 .MinimumScale = .MinimumScale - axesLen1
                 .MaximumScale = .MaximumScale + axesLen1
             End With
-            
+
             With myChart.Chart.Axes(xlCategory)
                 .MinimumScale = .MinimumScale - axesLen2
                 .MaximumScale = .MaximumScale + axesLen2
@@ -1642,7 +1651,7 @@ Private Function zoomChart(Optional ByVal inOut As Integer = 0)
                     .MinimumScale = .MinimumScale + axesLen1
                     .MaximumScale = .MaximumScale - axesLen1
             End With
-            
+
             With myChart.Chart.Axes(xlCategory)
                     .MinimumScale = .MinimumScale + axesLen2
                     .MaximumScale = .MaximumScale - axesLen2
@@ -1657,7 +1666,7 @@ Private Function zoomChart(Optional ByVal inOut As Integer = 0)
                     .MinimumScale = .MinimumScale + axesLen1
                     .MaximumScale = .MaximumScale + axesLen1
             End With
-    
+
         Case 4  'up
             With myChart.Chart.Axes(xlValue)
                     .MinimumScale = .MinimumScale + axesLen1
@@ -1731,16 +1740,16 @@ Private Function categoryXY()
     Dim X As Range
     Dim Y As Range
     Dim srs As Series
-        
+
     If db = 0 Then Call initDb
-    
+
     On Error GoTo err_handler
     categoryArray = sqlite3.queryToArray(db, "SELECT DISTINCT category from summary", CP_GB2312, False)
     If ArrayDimension(categoryArray) <= 0 Then
         On Error GoTo err_handler
         Exit Function
     End If
-    
+
     sCategoryXY.Cells.Clear
     For i = 0 To UBound(categoryArray)
         On Error GoTo err_handler
@@ -1752,7 +1761,7 @@ Private Function categoryXY()
             '将坐标导入excel
             .Range(.Cells(1, 1 + i * 2), .Cells(UBound(myArray1) + 1, 1 + i * 2)) = Application.Transpose(myArray1)
             .Range(.Cells(1, 2 + i * 2), .Cells(UBound(myArray2) + 1, 2 + i * 2)) = Application.Transpose(myArray2)
-        
+
             '添加到图表
             Set X = .Range(.Cells(2, 1 + i * 2), .Cells(UBound(myArray1) + 1, 1 + i * 2))
             Set Y = .Range(.Cells(2, 2 + i * 2), .Cells(UBound(myArray2) + 1, 2 + i * 2))
@@ -1764,11 +1773,11 @@ Private Function categoryXY()
                 .updateSeries myChart, xlXYScatter
             End With
         End With
-        
+
         Erase myArray1
         Erase myArray2
     Next i
-    
+
     'formatting series
     On Error GoTo err_handler
     myChart.Chart.ChartTitle.Caption = "上海市新冠疫情分区防控图" & "(" & getMax("summary", "release_date") & ")"
@@ -1806,11 +1815,11 @@ err_handler:
     If Err.Number <> 0 Then
         MsgBox Err.Description
     End If
-    
+
     Set X = Nothing
     Set Y = Nothing
     Set iChart = Nothing
-    
+
 End Function
 
 Private Function summaryChart()
@@ -1830,19 +1839,19 @@ Private Function summaryChart()
     If db = 0 Then Call initDb
     sql = "select DISTINCT category,count(location) from summary group by category"
     myArray = sqlite3.queryToArray(db, sql, CP_GB2312, False)
-    
+
     If ArrayDimension(myArray) <= 0 Then
         Err.Number = 100
         Err.Description = "查询失败"
         GoTo err_handler
     End If
-    
+
     For i = 0 To UBound(myArray, 1)
         If i = 0 Then delimiter = "" Else delimiter = ","
         X = X & delimiter & Chr(34) & myArray(i, 0) & Chr(34)
         Y = Y & delimiter & myArray(i, 1)
     Next i
-    
+
     '添加扇形图
     Set ws = home
     Set myChart = createNewSummaryChart("summary", ws)
@@ -1870,13 +1879,13 @@ Private Function summaryChart()
             .Values = "={" & myArray(i, 1) & "}"
         End With
     Next i
-    
+
     '格式化
     With ws.Shapes(myChart.name)
         .Line.Visible = msoFalse '隐藏边框
         .Fill.Visible = msoFalse
     End With
-    
+
     With myChart.Chart
 
         '.SetElement (msoElementPrimaryCategoryAxisNone)
@@ -1904,7 +1913,7 @@ Private Function summaryChart()
         'On Error GoTo err_handler
         .Axes(xlValue).MaximumScale = sqlite3.recordCount(db, "select DISTINCT location from by_location")
     End With
-    
+
     For i = fsc.count To 1 Step -1
         With fsc(i)
             .HasDataLabels = True
@@ -1918,7 +1927,7 @@ Private Function summaryChart()
                 .ForeColor.RGB = RGB(255, 255, 255)
             End With
             .DataLabels.Format.TextFrame2.WordWrap = msoFalse   '禁用标签文字自动换行
-            
+
             With .Format.Fill
                 Select Case fsc(i).name
                     Case "封控区"
@@ -1934,7 +1943,7 @@ Private Function summaryChart()
 
 err_handler:
     If Err.Number <> 0 Then MsgBox Err.Description
-    
+
     Set ws = Nothing
     Set srs = Nothing
     Set myChart = Nothing
@@ -1947,14 +1956,14 @@ Private Function addShapeInfo()
     Dim sql As String
     Dim mDate As String
     Dim myShape As Shape
-    
+
     myShapeName = "infoDescription"
     If db = 0 Then Call initDb
     mDate = getMax("summary", "release_date")
     sql = "select description from by_city where release_date = '" & mDate & "'"
     On Error GoTo err_handler
     myShapeStr = sqlite3.queryToArray(db, sql, CP_GB2312, False)(0)
-    
+
     For Each myShape In home.Shapes
         If myShape.name = myShapeName Then
             Set myShape = home.Shapes(myShapeName)
@@ -1971,7 +1980,7 @@ final:
         .Fill.Transparency = 0.85
         .TextFrame2.AutoSize = msoAutoSizeShapeToFitText
     End With
-    
+
 err_handler:
     If Err.Number <> 0 Then
         Debug.Print Err.Description
@@ -1986,10 +1995,10 @@ Private Function historicalStreamChart()
 
     '计算解封条件
     If db = 0 Then Call initDb
-    
+
     sql = "SELECT DISTINCT release_date from url_list order by release_date asc"
     myArray = sqlite3.queryToArray(db, sql, CP_GB2312, False)
-    
+
     For Each mDate In myArray
         fullPoiSummary mDate
         DoEvents
@@ -2041,7 +2050,7 @@ Private Function formatChart(ByVal myChart As ChartObject, Optional ByVal stage 
                     .TickLabels.Font.Size = 12
                     .TickLabelPosition = xlLow
                 End With
-            
+
             End With
         Case 1
             With myChart.Chart
@@ -2119,7 +2128,7 @@ Private Function setBubbleSeries(ByVal mySeries As Series, _
     ByVal Y As String, _
     ByVal bubbleSize As String, _
     Optional ByVal chartType As Integer = xlBubble3DEffect)
-    
+
     With mySeries
         .chartType = chartType
         .MarkerStyle = 8
@@ -2139,7 +2148,7 @@ Private Function setXYSeries(ByVal mySeries As Series, _
     ByVal X As String, _
     ByVal Y As String, _
     Optional ByVal chartType As Integer = xlXYScatter)
-    
+
     With mySeries
         .chartType = chartType
         .MarkerStyle = 8
@@ -2214,7 +2223,7 @@ Private Function initTrendChart()
     myArray = sqlite3.queryToArray(db, sql, CP_GB2312, False)
 '    Sheet1.Cells.Clear
 '    Sheet1.Range(Sheet1.Cells(1, 1), Sheet1.Cells(UBound(myArray, 1) + 1, UBound(myArray, 2) + 1)) = myArray
-    
+
     sqlite3.execSQL db, "DROP TABLE IF EXISTS by_city_tmp"
 
     If ArrayDimension(myArray) <= 0 Then
@@ -2222,7 +2231,7 @@ Private Function initTrendChart()
         Err.Description = "查询失败"
         GoTo err_handler
     End If
-    
+
     For i = UBound(myArray, 1) To 0 Step -1
         If i = UBound(myArray, 1) Then delimiter = "" Else delimiter = ","
         X = X & delimiter & VBA.Format(myArray(i, 1), 0) 'end_date
@@ -2294,7 +2303,7 @@ Private Function initTrendChart()
         .SetElement (msoElementLegendNone)
     End With
     setBubbleSeries mySeries, "=" & Chr(34) & "确诊感染者" & Chr(34), "={" & X & "}", "={ " & Y1 & "}", "={ " & Y1 & "}", xlBubble3DEffect
-    
+
     '添加图列 - 确诊病例
     Set mySeries = myChart1.Chart.SeriesCollection.NewSeries
     setXYSeries mySeries, "=" & Chr(34) & "确诊感染者" & Chr(34), "={" & VBA.Format(myArray(0, 1), "0") & "}", "={" & myArray(0, 2) & "}", xlXYScatterSmooth
@@ -2333,14 +2342,14 @@ Private Function exportToExcel()
     Dim wsListName As String
     Dim tbl As Variant
     Dim i As Integer
-    
+
     If db = 0 Then Call initDb
-    
+
     wsList = "by_city,by_district,by_location,summary,url_list,poi"
     wsListName = "全市,各区,居住地明细,居住地汇总,数据源,兴趣点坐标库"
     Set wk = Application.Workbooks.add
     wk.Windows(1).Visible = False
-    
+
     '将sqlite数据库导出到excel
     Application.ScreenUpdating = False
     i = 0
@@ -2350,7 +2359,7 @@ Private Function exportToExcel()
         dbToExcel db, tbl, ws
         i = i + 1
     Next tbl
-    
+
     Set ws = Nothing
     wk.Windows(1).Visible = True
     Application.ScreenUpdating = True
@@ -2359,29 +2368,29 @@ End Function
 
 Private Function createBtn(ByVal ws As Worksheet, ByVal btn As String, ByVal btnCaption As String) As Button
         Dim myBtn As Button
-        
+
         If btnExists(btn, ws) Then Set createBtn = ws.Buttons(btn): Exit Function
-        
+
         Set myBtn = ws.Buttons.add(192.75, 108, 72, 72)
         With myBtn
             .name = btn
             .Caption = btnCaption
             .OnAction = "main"
         End With
-        
+
         Set createBtn = myBtn
 
         Set myBtn = Nothing
 End Function
 Private Function createShape(ByVal ws As Worksheet, ByVal myShapeName As String, ByVal myShapeText As String) As Shape
         Dim myShape As Shape
-        
+
         If shapeExists(myShapeName, ws) Then
             Set myShape = ws.Shapes(myShapeName)
         Else
             Set myShape = ws.Shapes.AddShape(msoShapeRoundedRectangle, 60, 70, 273, 25)
         End If
-        
+
         With myShape
             .name = myShapeName
             .ShapeStyle = msoShapeStylePreset37
@@ -2428,7 +2437,7 @@ Private Function createBtnList()
     Dim i As Integer
     Dim ws As Worksheet
     Dim myBtn As Button
-    
+
     Set ws = home
     btnList = "btnInquiry,btnUpdate,btnUpdateMap,btnHistryChart,btnExportToExcel,ZoomIn,ZoomOut,moveLeft,moveRight,moveUp,moveDown,sizeReset"
     btnCaption = "开始查询,更新数据,更新地图,动态显示,导出数据,放大,缩小,左移←,→右移,上移↑,↓下移,重置地图"
@@ -2454,7 +2463,7 @@ End Function
 
 Function progressShape(ByVal msg As String)
     Dim scr_update_status As Boolean
-    
+
     scr_update_status = Application.ScreenUpdating
 
     Application.ScreenUpdating = True
@@ -2494,7 +2503,7 @@ Public Sub main()
         Case "btnExportToExcel"
             Call exportToExcel
     End Select
-    
+
     Set myBtn = Nothing
 End Sub
 

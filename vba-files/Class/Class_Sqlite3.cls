@@ -9,7 +9,7 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-'author by: Hans Yao <hans.yao@gmail.com>
+'author by: Hans Yao <hansyow@gmail.com>
 'blog: https://blog.oneplus-solution.com
 
 '基于sqlite C语言接口

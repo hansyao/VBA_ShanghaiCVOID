@@ -13,7 +13,7 @@ Attribute VB_Exposed = False
 '* [ÀàÃû] Class_Chart
 '* [ÃèÊö] Simple Chart control
 '*
-'* @author Hans Yao <hansyao@gmail.com>
+'* @author Hans Yao <hansyow@gmail.com>
 '* Copyright (c) 2019-2022 Hans Yao
 '*/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
 
