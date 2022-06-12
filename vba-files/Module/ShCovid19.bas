@@ -5,7 +5,8 @@ Attribute VB_Name = "ShCovid19"
 '''|                tech stack: sqlite3, excel XY chart                      |
 '''|                @author Hans Yao <hansyow@gmail.com>                     |
 '''|                  Copyright (c) 2019-2022 Hans Yao                       |
-'''|          The Project Page: https://blog.oneplus-solution.com            |
+'''|          The Project Page: https://github.com/hansyao/VBA_ShanghaiCVOID |
+'''|          my blog: https://blog.oneplus-solution.com                     |
 '''+--                                                                   ----+
 
 Option Explicit
