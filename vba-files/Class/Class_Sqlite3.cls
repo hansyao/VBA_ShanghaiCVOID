@@ -46,7 +46,7 @@ Private Const CP_GB2312 = 936
 Private Const CP_GB18030 = 54936
 Private Const CP_UTF7 = 65000
 
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Private Declare PtrSafe Function sqlite3_open Lib "winsqlite3.dll" (ByVal zFilename As String, ByRef ppDB As LongPtr) As LongPtr
     Private Declare PtrSafe Function sqlite3_close Lib "winsqlite3.dll" (ByVal db As LongPtr) As LongPtr
     Private Declare PtrSafe Function sqlite3_exec Lib "winsqlite3.dll" (ByVal db As LongPtr, ByVal sql As String, ByVal callback As LongPtr, ByVal argument_1 As LongPtr, ByRef errmsg As String) As LongPtr
@@ -121,7 +121,7 @@ Public Function Utf8BytesToString(abUtf8Array() As Byte) As String
     Utf8BytesToString = Left$(strOut, nChars)
 End Function
 
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Private Function utf8ptrToString(ByVal pUtf8String As LongPtr) As String
 #Else
     Private Function utf8ptrToString(ByVal pUtf8String As Long) As String
@@ -148,7 +148,7 @@ End Function
 
 End Function
 
-#If VBA7 And Win64 Then
+#If VBA7 Then
     Private Function ptrToString(ByVal pString As LongPtr, ByVal CodePage As Long) As String
 #Else
     Private Function ptrToString(ByVal pString As Long, ByVal CodePage As Long) As String

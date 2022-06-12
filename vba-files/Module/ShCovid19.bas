@@ -28,7 +28,7 @@ Private Const exclude = "»¬¶¯,¾Ó×¡ÓÚ,ÒÑ¶Ô,×ÊÁÏ,±à¼­,ÉÏº£·¢²¼,¸÷ÇøÐÅÏ¢,ÊÐÎÀ½¡Î¯,±
 Private Const sHeader = "release_date,location,district,latest_date,dDiff,category,dUnlockdown,dDiffUnlockdown,lng,lat,formattedAddress,businessAreas,township"
 Private Const sHeaderCN = "·¢²¼ÈÕÆÚ,¾Ó×¡µØ,Ï½Çø,×îºóÒ»´ÎÑôÐÔÈÕÆÚ,Î´³öÏÖÑôÐÔÌìÊý,ÇøÓò»®·Ö,¹ÀËã½â·âÈÕÆÚ,½â·âÊ£ÓàÌìÊý,¾­¶È×ø±ê,Î³¶È×ø±ê,ÏêÏ¸µØÖ·,ÉÌÈ¦,ËùÊô¾ÓÎ¯"
 
-#If VBA7 Or Win64 Then
+#If VBA7 Then
 '// 64bit API Declarations
     Public Declare PtrSafe Function SafeArrayGetDim Lib "oleaut32.dll" (ByRef saArray() As Any) As Long
     Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
@@ -48,7 +48,7 @@ Private isHistoryExists As Boolean
 Public JSON As New Class_JsonConverter
 
 'sqlite3 database variant
-#If VBA7 Or Win64 Then
+#If VBA7 Then
     Public db As LongPtr
 #Else
     Public db As Long
@@ -85,7 +85,7 @@ End Function
 
 Public Function ArrayDimension(ByVal Arrary1 As Variant) As Long
     '·µ»ØÖµ: -1 ·ÇÊý×é, 0 ¿ÕÊý×é, >0 µ±Ç°Êý×éÎ¬¶È
-#If VBA7 Or Win64 Then
+#If VBA7 Then
     Dim Ptr1 As LongPtr
 #Else
     Dim Ptr1 As Long
@@ -239,7 +239,7 @@ Private Function MatchesExp(ByRef strng, ByRef patrn)
     Set regEx = Nothing
 End Function
 
-#If VBA7 Or Win64 Then
+#If VBA7 Then
 Public Function mapDataToDb(ByVal db As LongPtr, ByVal tbl As String)
 #Else
 Public Function mapDataToDb(ByVal db As Long, ByVal tbl As String)
@@ -604,7 +604,7 @@ Private Function clearAllSheets()
     sUrl.Cells.ClearContents
 End Function
 
-#If VBA7 Or Win64 Then
+#If VBA7 Then
     Private Function dbToExcel(ByVal db As LongPtr, ByVal tbl As String, ByVal ws As Worksheet)
 #Else
     Private Function dbToExcel(ByVal db As Long, ByVal tbl As String, ByVal ws As Worksheet)
