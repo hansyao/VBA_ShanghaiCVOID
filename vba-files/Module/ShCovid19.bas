@@ -596,13 +596,13 @@ continue:
     Set Resp = Nothing
 End Function
 
-Private Function clearAllSheets()
-    sCity.Cells.ClearContents
-    sDistrict.Cells.ClearContents
-    sCity.Cells.ClearContents
-    sLocation.Cells.ClearContents
-    sUrl.Cells.ClearContents
-End Function
+' Private Function clearAllSheets()
+'     sCity.Cells.ClearContents
+'     sDistrict.Cells.ClearContents
+'     sCity.Cells.ClearContents
+'     sLocation.Cells.ClearContents
+'     sUrl.Cells.ClearContents
+' End Function
 
 #If VBA7 Then
     Private Function dbToExcel(ByVal db As LongPtr, ByVal tbl As String, ByVal ws As Worksheet)
